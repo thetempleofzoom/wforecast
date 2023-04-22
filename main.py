@@ -11,19 +11,34 @@ days = sl.slider('# of forecast days:', min_value = 1,
 
 dropdown = sl.selectbox('Select data to view:', ('Temperature', 'Cloud Cover'))
 
-sl.subheader(f'{dropdown} for the next {days} days in '
+
+
+dates = []
+values = []
+images = {'Clear': 'images/clear.png', 'Clouds': 'images/cloud.png', 'Rain': 'images/rain.png',
+          'Snow': 'images/snow.png'}
+
+if place:
+    try:
+        datapoints, contents = call(days, place)
+        sl.subheader(f'{dropdown} for the next {days} days in '
              f'{place.title()}')
+        dates = [contents[dtp]['dt_txt'] for dtp in range(0, datapoints, 1)]
 
-#call function using days input
-d, v = call(dropdown, days, place)
+        if dropdown == 'Temperature':
+            values = [round(contents[dtp]['main']['temp'] / 10, 1) for dtp in range(0, datapoints, 1)]
+            # use dir to see plotly methods
+            figure = px.line(x=dates, y=values,
+                             labels={'x': 'Date', 'y': 'Temperature (C)'})
+            sl.plotly_chart(figure)
+        else:
+            values = [(contents[dtp]['weather'][0]['main']) for dtp in range(0, datapoints, 1)]
+            pngs = [images[value] for value in values]
+            sl.image(pngs, width=115, caption=dates)
+            
 
-# use dir to see plotly methods
-if dropdown == 'Temperature':
-    figure = px.line(x=d, y= v,
-                 labels={'x':'Date', 'y':'Temperature (C)'})
-else:
-    figure = px.line(x=d, y=v,
-                     labels={'x': 'Date', 'y': 'Cloud Cover'})
+    except KeyError:
+        sl.markdown("**:red[Place doesn't exist!]**")
 
-sl.plotly_chart(figure)
+
 
